@@ -1,19 +1,19 @@
 FROM alpine:3 AS builder
 
 # Download ttrss via git
-WORKDIR /var/www
-RUN apk add --update tar curl git \
-  && rm -rf /var/www/* \
-  && git clone https://git.tt-rss.org/fox/tt-rss --depth=1 /var/www \
+WORKDIR /var/www/ttrss
+RUN mkdir -p /var/www/ttrss && apk add --update tar curl git \
+  && rm -rf /var/www/ttrss/* \
+  && git clone https://git.tt-rss.org/fox/tt-rss --depth=1 /var/www/ttrss \
   && cp config.php-dist config.php
 
 # Download plugins
-WORKDIR /var/www/plugins.local
+WORKDIR /var/www/ttrss/plugins.local
 
 ## Fever
-RUN mkdir /var/www/plugins/fever && \
+RUN mkdir /var/www/ttrss/plugins/fever && \
   curl -sL https://github.com/HenryQW/tinytinyrss-fever-plugin/archive/master.tar.gz | \
-  tar xzvpf - --strip-components=1 -C /var/www/plugins/fever tinytinyrss-fever-plugin-master
+  tar xzvpf - --strip-components=1 -C /var/www/ttrss/plugins/fever tinytinyrss-fever-plugin-master
 
 ## Mercury Fulltext
 RUN mkdir mercury_fulltext && \
@@ -54,7 +54,7 @@ RUN mkdir wallabag_v2 && \
   tar xzvpf - --strip-components=2 -C wallabag_v2 ttrss-to-wallabag-v2-master/wallabag_v2
 
 # Download themes
-WORKDIR /var/www/themes.local
+WORKDIR /var/www/ttrss/themes.local
 
 ## Feedly
 RUN curl -sL https://github.com/levito/tt-rss-feedly-theme/archive/master.tar.gz | \
@@ -66,9 +66,9 @@ RUN curl -sL https://github.com/DIYgod/ttrss-theme-rsshub/archive/master.tar.gz 
 
 FROM alpine:3
 
-LABEL maintainer="Henry<hi@henry.wang>"
+LABEL maintainer="C2R<c2real.cn@gmail.com>"
 
-WORKDIR /var/www
+WORKDIR /var/www/ttrss
 
 COPY src/wait-for.sh /wait-for.sh
 COPY src/ttrss.nginx.conf /etc/nginx/nginx.conf
@@ -91,7 +91,7 @@ RUN chmod -x /wait-for.sh && apk add --update --no-cache git nginx s6 curl \
   && rm -rf /var/www 
 
 # Copy TTRSS and plugins
-COPY --from=builder /var/www /var/www
+COPY --from=builder /var/www/ttrss /var/www/ttrss
 
 ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
 
